@@ -37,7 +37,7 @@ export class ConfigService {
 
   constructor(
     private readonly config$: Observable<Config>,
-    readonly env: Env,
+    private readonly env: Env,
     logger: LoggerFactory
   ) {
     this.log = logger.get('config');

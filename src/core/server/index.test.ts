@@ -16,8 +16,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
-const mockHttpService = { start: jest.fn(), stop: jest.fn(), registerRouter: jest.fn() };
+import { createHttpServiceMock } from './http/__mocks__/http_service';
+const mockHttpService = createHttpServiceMock();
 jest.mock('./http/http_service', () => ({
   HttpService: jest.fn(() => mockHttpService),
 }));
@@ -38,7 +38,9 @@ import { Env } from './config';
 import { getEnvOptions } from './config/__mocks__/env';
 import { logger } from './logging/__mocks__';
 
-const mockConfigService = { atPath: jest.fn(), getUnusedPaths: jest.fn().mockReturnValue([]) };
+import { createConfigServiceMock } from './config/__mocks__/config_service';
+
+const mockConfigService = createConfigServiceMock();
 const env = new Env('.', getEnvOptions());
 
 beforeEach(() => {

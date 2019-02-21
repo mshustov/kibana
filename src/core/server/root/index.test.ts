@@ -21,8 +21,9 @@ const mockLoggingService = { asLoggerFactory: jest.fn(), upgrade: jest.fn(), sto
 jest.mock('../logging', () => ({
   LoggingService: jest.fn(() => mockLoggingService),
 }));
+import { createConfigServiceMock } from '../config/__mocks__/config_service';
 
-const mockConfigService = { atPath: jest.fn(), getConfig$: jest.fn() };
+const mockConfigService = createConfigServiceMock();
 jest.mock('../config/config_service', () => ({
   ConfigService: jest.fn(() => mockConfigService),
 }));

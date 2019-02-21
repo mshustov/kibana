@@ -18,8 +18,10 @@
  */
 
 // Test helpers to simplify mocking logs and collecting all their outputs
+import { Logger } from '../logger';
+import { LoggingService } from '../logging_service';
 
-const mockLog = {
+const mockLog: jest.Mocked<Logger> = {
   debug: jest.fn(),
   error: jest.fn(),
   fatal: jest.fn(),
@@ -30,7 +32,7 @@ const mockLog = {
 };
 
 const mockClear = () => {
-  logger.get.mockClear();
+  (logger.get as any).mockClear();
   mockLog.debug.mockClear();
   mockLog.info.mockClear();
   mockLog.warn.mockClear();
@@ -50,8 +52,18 @@ const mockCollect = () => ({
   warn: mockLog.warn.mock.calls,
 });
 
-export const logger = {
+type LoggingSericeContract = Required<LoggingService>;
+
+export const logger: jest.Mocked<LoggingSericeContract> & {
+  mockClear: typeof mockClear;
+  mockCollect: typeof mockCollect;
+  mockLog: jest.Mocked<Logger>;
+} = {
+  // FIXME
   get: jest.fn(() => mockLog),
+  asLoggerFactory: jest.fn(),
+  upgrade: jest.fn(),
+  stop: jest.fn(),
   mockClear,
   mockCollect,
   mockLog,
