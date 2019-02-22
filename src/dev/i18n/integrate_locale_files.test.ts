@@ -20,8 +20,7 @@
 const mockWriteFileAsync = jest.fn();
 const mockMakeDirAsync = jest.fn();
 jest.mock('./utils', () => ({
-  // Jest typings don't define `requireActual` for some reason.
-  ...(jest as any).requireActual('./utils'),
+  ...jest.requireActual('./utils'),
   writeFileAsync: mockWriteFileAsync,
   makeDirAsync: mockMakeDirAsync,
 }));
