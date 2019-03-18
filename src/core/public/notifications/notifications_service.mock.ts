@@ -18,12 +18,10 @@
  */
 import { NotificationsService, NotificationsStart } from './notifications_service';
 import { toastsServiceMock } from './toasts/toasts_service.mock';
-import { ToastsStart } from './toasts/toasts_start';
 
 const createStartContractMock = () => {
   const startContract: jest.Mocked<NotificationsStart> = {
-    // we have to suppress type errors until decide how to mock es6 class
-    toasts: (toastsServiceMock.createStartContract() as unknown) as ToastsStart,
+    toasts: toastsServiceMock.createStartContract(),
   };
   return startContract;
 };

@@ -31,8 +31,16 @@ const normalizeToast = (toastOrTitle: ToastInput) => {
 
   return toastOrTitle;
 };
+export interface IToastsStart {
+  get$: () => Rx.Observable<Toast[]>;
+  add: (toastOrTitle: ToastInput) => Toast;
+  remove: (toast: Toast) => void;
+  addSuccess: (toastOrTitle: ToastInput) => Toast;
+  addWarning: (toastOrTitle: ToastInput) => Toast;
+  addDanger: (toastOrTitle: ToastInput) => Toast;
+}
 
-export class ToastsStart {
+export class ToastsStart implements IToastsStart {
   private toasts$ = new Rx.BehaviorSubject<Toast[]>([]);
   private idCounter = 0;
 

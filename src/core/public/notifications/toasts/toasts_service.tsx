@@ -23,7 +23,7 @@ import { render, unmountComponentAtNode } from 'react-dom';
 import { Toast } from '@elastic/eui';
 import { I18nStart } from '../../i18n';
 import { GlobalToastList } from './global_toast_list';
-import { ToastsStart } from './toasts_start';
+import { IToastsStart, ToastsStart } from './toasts_start';
 
 interface Params {
   targetDomElement: HTMLElement;
@@ -36,7 +36,7 @@ interface Deps {
 export class ToastsService {
   constructor(private readonly params: Params) {}
 
-  public start({ i18n }: Deps) {
+  public start({ i18n }: Deps): IToastsStart {
     const toasts = new ToastsStart();
 
     render(
