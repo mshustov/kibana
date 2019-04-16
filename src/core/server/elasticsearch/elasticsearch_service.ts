@@ -24,7 +24,7 @@ import { CoreContext } from '../core_context';
 import { Logger } from '../logging';
 import { ClusterClient } from './cluster_client';
 import { ElasticsearchClientConfig } from './elasticsearch_client_config';
-import { ElasticsearchConfig } from './elasticsearch_config';
+import { ElasticsearchConfig, ElasticsearchConfigType } from './elasticsearch_config';
 
 /** @internal */
 interface CoreClusterClients {
@@ -49,48 +49,51 @@ export interface ElasticsearchServiceSetup {
 export class ElasticsearchService implements CoreService<ElasticsearchServiceSetup> {
   private readonly log: Logger;
   private subscription?: Subscription;
+  private readonly config$: Observable<ElasticsearchConfig>;
 
-  constructor(private readonly coreContext: CoreContext) {
+  constructor(
+    private readonly coreContext: CoreContext,
+    config$: Observable<ElasticsearchConfigType>
+  ) {
     this.log = coreContext.logger.get('elasticsearch-service');
+    this.config$ = config$.pipe(map(config => new ElasticsearchConfig(config)));
   }
 
   public async setup(): Promise<ElasticsearchServiceSetup> {
     this.log.debug('Setting up elasticsearch service');
 
-    const clients$ = this.coreContext.configService
-      .atPath('elasticsearch', ElasticsearchConfig)
-      .pipe(
-        filter(() => {
-          if (this.subscription !== undefined) {
-            this.log.error('Clients cannot be changed after they are created');
-            return false;
-          }
+    const clients$ = this.config$.pipe(
+      filter(() => {
+        if (this.subscription !== undefined) {
+          this.log.error('Clients cannot be changed after they are created');
+          return false;
+        }
 
-          return true;
-        }),
-        switchMap(
-          config =>
-            new Observable<CoreClusterClients>(subscriber => {
-              this.log.debug(`Creating elasticsearch clients`);
+        return true;
+      }),
+      switchMap(
+        config =>
+          new Observable<CoreClusterClients>(subscriber => {
+            this.log.debug(`Creating elasticsearch clients`);
 
-              const coreClients = {
-                config,
-                adminClient: this.createClusterClient('admin', config),
-                dataClient: this.createClusterClient('data', config),
-              };
+            const coreClients = {
+              config,
+              adminClient: this.createClusterClient('admin', config),
+              dataClient: this.createClusterClient('data', config),
+            };
 
-              subscriber.next(coreClients);
+            subscriber.next(coreClients);
 
-              return () => {
-                this.log.debug(`Closing elasticsearch clients`);
+            return () => {
+              this.log.debug(`Closing elasticsearch clients`);
 
-                coreClients.adminClient.close();
-                coreClients.dataClient.close();
-              };
-            })
-        ),
-        publishReplay(1)
-      ) as ConnectableObservable<CoreClusterClients>;
+              coreClients.adminClient.close();
+              coreClients.dataClient.close();
+            };
+          })
+      ),
+      publishReplay(1)
+    ) as ConnectableObservable<CoreClusterClients>;
 
     this.subscription = clients$.connect();
 

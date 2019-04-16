@@ -62,6 +62,13 @@ const configSchema = schema.object({
 
 type SslConfigSchema = TypeOf<typeof configSchema>['ssl'];
 
+export type ElasticsearchConfigType = TypeOf<typeof configSchema>;
+
+export const elasticsearchConfigDefinition = {
+  configPath: 'elasticsearch',
+  schema: configSchema,
+};
+
 export class ElasticsearchConfig {
   public static schema = configSchema;
 

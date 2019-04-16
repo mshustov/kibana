@@ -25,8 +25,11 @@ const createDevSchema = schema.object({
   }),
 });
 
-type DevConfigType = TypeOf<typeof createDevSchema>;
-
+export const devConfigDefinition = {
+  configPath: 'dev',
+  schema: createDevSchema,
+};
+export type DevConfigType = TypeOf<typeof createDevSchema>;
 export class DevConfig {
   /**
    * @internal

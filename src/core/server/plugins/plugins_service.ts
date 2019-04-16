@@ -17,16 +17,21 @@
  * under the License.
  */
 
-import { Observable } from 'rxjs';
+import { Observable, from } from 'rxjs';
 import { filter, first, mergeMap, tap, toArray } from 'rxjs/operators';
 import { CoreService } from '../../types';
 import { CoreContext } from '../core_context';
 import { ElasticsearchServiceSetup } from '../elasticsearch/elasticsearch_service';
 import { HttpServiceSetup } from '../http/http_service';
 import { Logger } from '../logging';
-import { discover, PluginDiscoveryError, PluginDiscoveryErrorType } from './discovery';
+import {
+  PluginDiscoveryError,
+  PluginDiscoveryErrorType,
+  DiscoveredPluginsDefinitions,
+} from './discovery';
 import { DiscoveredPlugin, DiscoveredPluginInternal, PluginWrapper, PluginName } from './plugin';
-import { PluginsConfig } from './plugins_config';
+import { createPluginInitializerContext } from './plugin_context';
+import { PluginsConfigType } from './plugins_config';
 import { PluginsSystem } from './plugins_system';
 
 /** @internal */
@@ -49,21 +54,38 @@ export class PluginsService implements CoreService<PluginsServiceSetup> {
   private readonly log: Logger;
   private readonly pluginsSystem: PluginsSystem;
 
-  constructor(private readonly coreContext: CoreContext) {
+  constructor(
+    private readonly coreContext: CoreContext,
+    private readonly config$: Observable<PluginsConfigType>
+  ) {
     this.log = coreContext.logger.get('plugins-service');
     this.pluginsSystem = new PluginsSystem(coreContext);
   }
 
-  public async setup(deps: PluginsServiceSetupDeps) {
+  public async setup(
+    deps: PluginsServiceSetupDeps,
+    newPlatformPluginDefinitions: DiscoveredPluginsDefinitions
+  ) {
     this.log.debug('Setting up plugins service');
 
-    const config = await this.coreContext.configService
-      .atPath('plugins', PluginsConfig)
-      .pipe(first())
-      .toPromise();
+    const config = await this.config$.pipe(first()).toPromise();
 
-    const { error$, plugin$ } = discover(config, this.coreContext);
-    await this.handleDiscoveryErrors(error$);
+    const plugin$ = from(
+      newPlatformPluginDefinitions.pluginDefinitions.map(
+        ({ path, manifest }) =>
+          new PluginWrapper(
+            path,
+            manifest,
+            createPluginInitializerContext(this.coreContext, manifest)
+          )
+      )
+    );
+
+    const discoveryError$ = from(newPlatformPluginDefinitions.errors);
+
+    // TODO decide if we should keep Observables here,
+    // as value are known and not dynamic by nature
+    await this.handleDiscoveryErrors(discoveryError$);
     await this.handleDiscoveredPlugins(plugin$);
 
     if (!config.initialize || this.coreContext.env.isDevClusterMaster) {

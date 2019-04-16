@@ -18,12 +18,13 @@
  */
 
 import { first } from 'rxjs/operators';
+
 import { ConfigService, Env } from './config';
 import { ElasticsearchService } from './elasticsearch';
-import { HttpConfig, HttpService, HttpServiceSetup, Router } from './http';
+import { HttpService, HttpServiceSetup, Router, HttpConfigType } from './http';
 import { LegacyService } from './legacy';
 import { Logger, LoggerFactory } from './logging';
-import { PluginsService } from './plugins';
+import { PluginsService, DiscoveredPluginsDefinitions } from './plugins';
 
 export class Server {
   private readonly elasticsearch: ElasticsearchService;
@@ -38,19 +39,25 @@ export class Server {
     private readonly env: Env
   ) {
     this.log = logger.get('server');
+    const core = { env, configService, logger };
 
-    this.http = new HttpService(configService.atPath('server', HttpConfig), logger);
+    this.http = new HttpService(
+      core,
+      configService.atPathWithoutConfigClass<HttpConfigType>('server')
+    );
     const router = new Router('/core');
     router.get({ path: '/', validate: false }, async (req, res) => res.ok({ version: '0.0.1' }));
     this.http.registerRouter(router);
 
-    const core = { env, configService, logger };
-    this.plugins = new PluginsService(core);
+    this.plugins = new PluginsService(core, configService.atPathWithoutConfigClass('plugins'));
     this.legacy = new LegacyService(core);
-    this.elasticsearch = new ElasticsearchService(core);
+    this.elasticsearch = new ElasticsearchService(
+      core,
+      configService.atPathWithoutConfigClass('elasticsearch')
+    );
   }
 
-  public async setup() {
+  public async setup(newPlatformPluginDefinitions: DiscoveredPluginsDefinitions) {
     this.log.debug('setting up server');
 
     // We shouldn't set up http service in two cases:
@@ -59,7 +66,8 @@ export class Server {
     // will fork a dedicated process where http service will be set up instead.
     let httpSetup: HttpServiceSetup | undefined;
     const httpConfig = await this.configService
-      .atPath('server', HttpConfig)
+      // method definition needs some work
+      .atPathWithoutConfigClass<HttpConfigType>('server')
       .pipe(first())
       .toPromise();
     if (!this.env.isDevClusterMaster && httpConfig.autoListen) {
@@ -68,10 +76,13 @@ export class Server {
 
     const elasticsearchServiceSetup = await this.elasticsearch.setup();
 
-    const pluginsSetup = await this.plugins.setup({
-      elasticsearch: elasticsearchServiceSetup,
-      http: httpSetup,
-    });
+    const pluginsSetup = await this.plugins.setup(
+      {
+        elasticsearch: elasticsearchServiceSetup,
+        http: httpSetup,
+      },
+      newPlatformPluginDefinitions
+    );
 
     await this.legacy.setup({
       elasticsearch: elasticsearchServiceSetup,

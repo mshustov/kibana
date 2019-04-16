@@ -26,7 +26,7 @@ import { Config, ConfigService, Env, ObjectToConfigAdapter } from '../../config'
 import { getEnvOptions } from '../../config/__mocks__/env';
 import { loggingServiceMock } from '../../logging/logging_service.mock';
 import { PluginWrapper } from '../plugin';
-import { PluginsConfig } from '../plugins_config';
+import { PluginsConfigType, PluginsConfig } from '../plugins_config';
 import { discover } from './plugins_discovery';
 
 const TEST_PLUGIN_SEARCH_PATHS = {
@@ -127,8 +127,11 @@ test('properly iterates through plugin search locations', async () => {
   );
 
   const pluginsConfig = await configService
-    .atPath('plugins', PluginsConfig)
-    .pipe(first())
+    .getConfig<PluginsConfigType>('plugins')
+    .pipe(
+      first(),
+      map(p => new PluginsConfig(p, env))
+    )
     .toPromise();
   const { plugin$, error$ } = discover(pluginsConfig, { configService, env, logger });
 

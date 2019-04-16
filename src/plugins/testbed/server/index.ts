@@ -56,3 +56,8 @@ class Plugin {
 
 export const plugin = (initializerContext: PluginInitializerContext) =>
   new Plugin(initializerContext);
+
+export const configDefinition = {
+  // configPath: ["core", "testbed"],
+  schema: TestBedConfig.schema,
+};

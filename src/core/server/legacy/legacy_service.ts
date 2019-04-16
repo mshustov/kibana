@@ -25,7 +25,7 @@ import { Config } from '../config';
 import { CoreContext } from '../core_context';
 import { DevConfig } from '../dev';
 import { ElasticsearchServiceSetup } from '../elasticsearch';
-import { BasePathProxyServer, HttpConfig, HttpServiceSetup } from '../http';
+import { BasePathProxyServer, HttpConfig, HttpServiceSetup, HttpConfigType } from '../http';
 import { Logger } from '../logging';
 import { PluginsServiceSetup } from '../plugins/plugins_service';
 import { LegacyPlatformProxy } from './legacy_platform_proxy';
@@ -160,7 +160,7 @@ export class LegacyService implements CoreService {
     }
 
     const httpConfig = await this.coreContext.configService
-      .atPath('server', HttpConfig)
+      .atPathWithoutConfigClass<HttpConfigType>('server')
       .pipe(first())
       .toPromise();
 

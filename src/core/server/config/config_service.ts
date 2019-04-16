@@ -34,15 +34,23 @@ export class ConfigService {
    * then list all unhandled config paths when the startup process is completed.
    */
   private readonly handledPaths: ConfigPath[] = [];
+  private readonly schemas = new Map<string, Type<unknown>>();
 
   constructor(
     private readonly config$: Observable<Config>,
     private readonly env: Env,
-    logger: LoggerFactory
+    logger: LoggerFactory,
+    schemas: Map<ConfigPath, Type<any>> = new Map()
   ) {
     this.log = logger.get('config');
+    for (const [path, schema] of schemas) {
+      this.schemas.set(pathToString(path), schema);
+    }
   }
 
+  static normalizeConfigPath(path: ConfigPath) {
+    return pathToString(path);
+  }
   /**
    * Returns the full config object observable. This is not intended for
    * "normal use", but for features that _need_ access to the full object.
@@ -50,7 +58,6 @@ export class ConfigService {
   public getConfig$() {
     return this.config$;
   }
-
   /**
    * Reads the subset of the config at the specified `path` and validates it
    * against the static `schema` on the given `ConfigClass`.
@@ -122,6 +129,33 @@ export class ConfigService {
     return config.getFlattenedPaths().filter(path => isPathHandled(path, handledPaths));
   }
 
+  public async validateAll() {
+    for (const namespace of this.schemas.keys()) {
+      await this.atPathWithoutConfigClass(namespace)
+        .pipe(first())
+        .toPromise();
+    }
+  }
+
+  private validateConfig<T>(path: ConfigPath, config: Record<string, any>): T {
+    const namespace = pathToString(path);
+    const schema = this.schemas.get(namespace);
+    if (!schema) {
+      throw new Error(`No config validator defined for ${namespace}`);
+    }
+    const validatedConfig = schema.validate(
+      config,
+      {
+        dev: this.env.mode.dev,
+        prod: this.env.mode.prod,
+        ...this.env.packageInfo,
+      },
+      namespace
+    );
+
+    return validatedConfig as T;
+  }
+
   private createConfig<TSchema extends Type<any>, TConfig>(
     path: ConfigPath,
     config: Record<string, any>,
@@ -149,6 +183,14 @@ export class ConfigService {
       namespace
     );
     return new ConfigClass(validatedConfig, this.env);
+  }
+
+  // this one could be as atPath, and current atPath can be atPathWithConfigClass, which receive ConfigClass
+  // or ConfigClass can be an optional parameter
+  public atPathWithoutConfigClass<ConfigType>(path: ConfigPath): Observable<ConfigType> {
+    return this.getDistinctConfig(path).pipe(
+      map(config => this.validateConfig<ConfigType>(path, config))
+    );
   }
 
   private getDistinctConfig(path: ConfigPath) {
