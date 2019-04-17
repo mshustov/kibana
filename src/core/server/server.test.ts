@@ -35,15 +35,21 @@ import { loggingServiceMock } from './logging/logging_service.mock';
 const configService = configServiceMock.create();
 const env = new Env('.', getEnvOptions());
 const logger = loggingServiceMock.create();
+const newPlatformPluginDefinitions = {
+  pluginDefinitions: [],
+  errors: [],
+};
 
 beforeEach(() => {
-  configService.atPath.mockReturnValue(new BehaviorSubject({ autoListen: true }));
+  configService.atPathWithoutConfigClass.mockReturnValue(new BehaviorSubject({ autoListen: true }));
+  // configService.atPath.mockReturnValue(new BehaviorSubject({ autoListen: true }));
 });
 
 afterEach(() => {
   jest.clearAllMocks();
 
   configService.atPath.mockReset();
+  configService.atPathWithoutConfigClass.mockReset();
   httpService.setup.mockReset();
   httpService.stop.mockReset();
   elasticsearchService.setup.mockReset();
@@ -65,7 +71,7 @@ test('sets up services on "setup"', async () => {
   expect(mockPluginsService.setup).not.toHaveBeenCalled();
   expect(mockLegacyService.setup).not.toHaveBeenCalled();
 
-  await server.setup();
+  await server.setup(newPlatformPluginDefinitions);
 
   expect(httpService.setup).toHaveBeenCalledTimes(1);
   expect(elasticsearchService.setup).toHaveBeenCalledTimes(1);
@@ -77,18 +83,20 @@ test('does not fail on "setup" if there are unused paths detected', async () => 
   configService.getUnusedPaths.mockResolvedValue(['some.path', 'another.path']);
 
   const server = new Server(configService as any, logger, env);
-  await expect(server.setup()).resolves.toBeUndefined();
+  await expect(server.setup(newPlatformPluginDefinitions)).resolves.toBeUndefined();
   expect(loggingServiceMock.collect(logger)).toMatchSnapshot('unused paths logs');
 });
 
 test('does not setup http service is `autoListen:false`', async () => {
-  configService.atPath.mockReturnValue(new BehaviorSubject({ autoListen: false }));
+  configService.atPathWithoutConfigClass.mockReturnValue(
+    new BehaviorSubject({ autoListen: false })
+  );
 
   const server = new Server(configService as any, logger, env);
 
   expect(mockLegacyService.setup).not.toHaveBeenCalled();
 
-  await server.setup();
+  await server.setup(newPlatformPluginDefinitions);
 
   expect(httpService.setup).not.toHaveBeenCalled();
   expect(mockLegacyService.setup).toHaveBeenCalledTimes(1);
@@ -104,7 +112,7 @@ test('does not setup http service if process is dev cluster master', async () =>
 
   expect(mockLegacyService.setup).not.toHaveBeenCalled();
 
-  await server.setup();
+  await server.setup(newPlatformPluginDefinitions);
 
   expect(httpService.setup).not.toHaveBeenCalled();
   expect(mockLegacyService.setup).toHaveBeenCalledTimes(1);
@@ -114,7 +122,7 @@ test('does not setup http service if process is dev cluster master', async () =>
 test('stops services on "stop"', async () => {
   const server = new Server(configService as any, logger, env);
 
-  await server.setup();
+  await server.setup(newPlatformPluginDefinitions);
 
   expect(httpService.stop).not.toHaveBeenCalled();
   expect(elasticsearchService.stop).not.toHaveBeenCalled();

@@ -22,11 +22,11 @@ import { first } from 'rxjs/operators';
 import { MockClusterClient } from './elasticsearch_service.test.mocks';
 
 import { BehaviorSubject, combineLatest } from 'rxjs';
-import { Config, ConfigService, Env, ObjectToConfigAdapter } from '../config';
+import { ConfigService, Env } from '../config';
 import { getEnvOptions } from '../config/__mocks__/env';
 import { CoreContext } from '../core_context';
 import { loggingServiceMock } from '../logging/logging_service.mock';
-import { ElasticsearchConfig } from './elasticsearch_config';
+import { ElasticsearchConfig, ElasticsearchConfigType } from './elasticsearch_config';
 import { ElasticsearchService } from './elasticsearch_service';
 
 let elasticsearchService: ElasticsearchService;
@@ -36,19 +36,16 @@ let coreContext: CoreContext;
 const logger = loggingServiceMock.create();
 beforeEach(() => {
   env = Env.createDefault(getEnvOptions());
-
-  configService = new ConfigService(
-    new BehaviorSubject<Config>(
-      new ObjectToConfigAdapter({
-        elasticsearch: { hosts: ['http://1.2.3.4'], username: 'jest' },
-      })
-    ),
-    env,
-    logger
-  );
-
+  const config$ = new BehaviorSubject(
+    Object.freeze({
+      healthCheck: {},
+      ssl: {},
+      hosts: ['http://1.2.3.4'],
+      username: 'jest',
+    } as ElasticsearchConfigType)
+  ).asObservable();
   coreContext = { env, logger, configService };
-  elasticsearchService = new ElasticsearchService(coreContext);
+  elasticsearchService = new ElasticsearchService(coreContext, config$);
 });
 
 afterEach(() => jest.clearAllMocks());

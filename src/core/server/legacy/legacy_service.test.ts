@@ -91,13 +91,16 @@ afterEach(() => {
 
 describe('once LegacyService is set up with connection info', () => {
   test('register proxy route.', async () => {
+    configService.atPathWithoutConfigClass.mockReturnValue(new BehaviorSubject({}));
     await legacyService.setup(setupDeps);
 
     expect(setupDeps.http.server.route.mock.calls).toMatchSnapshot('proxy route options');
   });
 
   test('proxy route responds with `503` if `kbnServer` is not ready yet.', async () => {
-    configService.atPath.mockReturnValue(new BehaviorSubject({ autoListen: true }));
+    configService.atPathWithoutConfigClass.mockReturnValue(
+      new BehaviorSubject({ autoListen: true })
+    );
 
     const kbnServerListen$ = new Subject();
     MockKbnServer.prototype.listen = jest.fn(() => {
@@ -154,6 +157,9 @@ describe('once LegacyService is set up with connection info', () => {
 
   test('creates legacy kbnServer and calls `listen`.', async () => {
     configService.atPath.mockReturnValue(new BehaviorSubject({ autoListen: true }));
+    configService.atPathWithoutConfigClass.mockReturnValue(
+      new BehaviorSubject({ autoListen: true })
+    );
 
     await legacyService.setup(setupDeps);
 
@@ -180,6 +186,9 @@ describe('once LegacyService is set up with connection info', () => {
 
   test('creates legacy kbnServer but does not call `listen` if `autoListen: false`.', async () => {
     configService.atPath.mockReturnValue(new BehaviorSubject({ autoListen: false }));
+    configService.atPathWithoutConfigClass.mockReturnValue(
+      new BehaviorSubject({ autoListen: false })
+    );
 
     await legacyService.setup(setupDeps);
 
@@ -207,6 +216,9 @@ describe('once LegacyService is set up with connection info', () => {
 
   test('creates legacy kbnServer and closes it if `listen` fails.', async () => {
     configService.atPath.mockReturnValue(new BehaviorSubject({ autoListen: true }));
+    configService.atPathWithoutConfigClass.mockReturnValue(
+      new BehaviorSubject({ autoListen: true })
+    );
     MockKbnServer.prototype.listen.mockRejectedValue(new Error('something failed'));
 
     await expect(legacyService.setup(setupDeps)).rejects.toThrowErrorMatchingSnapshot();
@@ -227,7 +239,6 @@ describe('once LegacyService is set up with connection info', () => {
 
   test('reconfigures logging configuration if new config is received.', async () => {
     await legacyService.setup(setupDeps);
-
     const [mockKbnServer] = MockKbnServer.mock.instances as Array<jest.Mocked<KbnServer>>;
     expect(mockKbnServer.applyLoggingConfiguration).not.toHaveBeenCalled();
 
@@ -329,6 +340,11 @@ describe('once LegacyService is set up without connection info', () => {
 describe('once LegacyService is set up in `devClusterMaster` mode', () => {
   beforeEach(() => {
     configService.atPath.mockImplementation(path => {
+      return new BehaviorSubject(
+        path === 'dev' ? { basePathProxyTargetPort: 100500 } : { basePath: '/abc' }
+      );
+    });
+    configService.atPathWithoutConfigClass.mockImplementation(path => {
       return new BehaviorSubject(
         path === 'dev' ? { basePathProxyTargetPort: 100500 } : { basePath: '/abc' }
       );

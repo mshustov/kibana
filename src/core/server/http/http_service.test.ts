@@ -21,11 +21,11 @@ import { mockHttpServer } from './http_service.test.mocks';
 
 import { noop } from 'lodash';
 import { BehaviorSubject } from 'rxjs';
-import { HttpConfig, HttpService, Router } from '.';
+import { HttpService, Router, HttpConfigType } from '.';
 import { loggingServiceMock } from '../logging/logging_service.mock';
 
 const logger = loggingServiceMock.create();
-
+const core = { logger, env: {} } as any;
 afterEach(() => {
   jest.clearAllMocks();
 });
@@ -35,7 +35,7 @@ test('creates and sets up http server', async () => {
     host: 'example.org',
     port: 1234,
     ssl: {},
-  } as HttpConfig;
+  } as HttpConfigType;
 
   const config$ = new BehaviorSubject(config);
 
@@ -46,7 +46,7 @@ test('creates and sets up http server', async () => {
   };
   mockHttpServer.mockImplementation(() => httpServer);
 
-  const service = new HttpService(config$.asObservable(), logger);
+  const service = new HttpService(core, config$.asObservable());
 
   expect(mockHttpServer.mock.instances.length).toBe(1);
   expect(httpServer.start).not.toHaveBeenCalled();
@@ -57,7 +57,7 @@ test('creates and sets up http server', async () => {
 });
 
 test('logs error if already set up', async () => {
-  const config = { ssl: {} } as HttpConfig;
+  const config = { ssl: {} } as HttpConfigType;
 
   const config$ = new BehaviorSubject(config);
 
@@ -68,7 +68,7 @@ test('logs error if already set up', async () => {
   };
   mockHttpServer.mockImplementation(() => httpServer);
 
-  const service = new HttpService(config$.asObservable(), logger);
+  const service = new HttpService(core, config$.asObservable());
 
   await service.setup();
 
@@ -76,7 +76,7 @@ test('logs error if already set up', async () => {
 });
 
 test('stops http server', async () => {
-  const config = { ssl: {} } as HttpConfig;
+  const config = { ssl: {} } as HttpConfigType;
 
   const config$ = new BehaviorSubject(config);
 
@@ -87,7 +87,7 @@ test('stops http server', async () => {
   };
   mockHttpServer.mockImplementation(() => httpServer);
 
-  const service = new HttpService(config$.asObservable(), logger);
+  const service = new HttpService(core, config$.asObservable());
 
   await service.setup();
 
@@ -99,7 +99,7 @@ test('stops http server', async () => {
 });
 
 test('register route handler', () => {
-  const config = {} as HttpConfig;
+  const config = {} as HttpConfigType;
 
   const config$ = new BehaviorSubject(config);
 
@@ -111,7 +111,7 @@ test('register route handler', () => {
   };
   mockHttpServer.mockImplementation(() => httpServer);
 
-  const service = new HttpService(config$.asObservable(), logger);
+  const service = new HttpService(core, config$.asObservable());
 
   const router = new Router('/foo');
   service.registerRouter(router);
@@ -122,7 +122,7 @@ test('register route handler', () => {
 });
 
 test('throws if registering route handler after http server is set up', () => {
-  const config = {} as HttpConfig;
+  const config = {} as HttpConfigType;
 
   const config$ = new BehaviorSubject(config);
 
@@ -134,7 +134,7 @@ test('throws if registering route handler after http server is set up', () => {
   };
   mockHttpServer.mockImplementation(() => httpServer);
 
-  const service = new HttpService(config$.asObservable(), logger);
+  const service = new HttpService(core, config$.asObservable());
 
   const router = new Router('/foo');
   service.registerRouter(router);
@@ -155,7 +155,7 @@ test('returns http server contract on setup', async () => {
     stop: noop,
   }));
 
-  const service = new HttpService(new BehaviorSubject({ ssl: {} } as HttpConfig), logger);
+  const service = new HttpService(core, new BehaviorSubject({ ssl: {} } as HttpConfigType));
 
   expect(await service.setup()).toBe(httpServer);
 });
