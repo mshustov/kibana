@@ -17,10 +17,10 @@
  * under the License.
  */
 
-// TODO Needs _some_ work
+// TODO formalize status codes in https://github.com/elastic/kibana/issues/33779
 export type StatusCode = 200 | 202 | 204 | 400;
 
-export class KibanaResponse<T> {
+export class KibanaResponse<T = unknown> {
   constructor(readonly status: StatusCode, readonly payload?: T) {}
 }
 

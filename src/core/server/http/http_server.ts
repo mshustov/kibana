@@ -26,6 +26,7 @@ import { createServer, getServerOptions } from './http_tools';
 import { adoptToHapiAuthFormat, AuthenticationHandler } from './lifecycle/auth';
 import { adoptToHapiOnPostAuthFormat, OnPostAuthHandler } from './lifecycle/on_post_auth';
 import { adoptToHapiOnPreAuthFormat, OnPreAuthHandler } from './lifecycle/on_pre_auth';
+import { adoptToHapiOnPreResponseFormat, OnPreResponseHandler } from './lifecycle/on_pre_response';
 import { Router, KibanaRequest } from './router';
 import {
   SessionStorageCookieOptions,
@@ -57,6 +58,7 @@ export interface HttpServerSetup {
    */
   registerOnPreAuth: (requestHandler: OnPreAuthHandler) => void;
   registerOnPostAuth: (requestHandler: OnPostAuthHandler) => void;
+  registerOnPreResponse: (handler: OnPreResponseHandler) => void;
   getBasePathFor: (request: KibanaRequest | Request) => string;
   setBasePathFor: (request: KibanaRequest | Request, basePath: string) => void;
   auth: {
@@ -136,6 +138,7 @@ export class HttpServer {
         fn: AuthenticationHandler<T>,
         cookieOptions: SessionStorageCookieOptions<T>
       ) => this.registerAuth(fn, cookieOptions, config.basePath),
+      registerOnPreResponse: this.registerOnPreResponse.bind(this),
       getBasePathFor: this.getBasePathFor.bind(this, config),
       setBasePathFor: this.setBasePathFor.bind(this),
       auth: {
@@ -232,6 +235,14 @@ export class HttpServer {
     }
 
     this.server.ext('onRequest', adoptToHapiOnPreAuthFormat(fn));
+  }
+
+  private registerOnPreResponse(fn: OnPreResponseHandler) {
+    if (this.server === undefined) {
+      throw new Error('Server is not created yet');
+    }
+
+    this.server.ext('onPreResponse', adoptToHapiOnPreResponseFormat(fn));
   }
 
   private async registerAuth<T>(
