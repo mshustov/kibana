@@ -473,6 +473,20 @@ describe('Auth', () => {
     expect(authenticate).toHaveBeenCalledTimes(0);
   });
 
+  test('does not call auth for unknown routes', async () => {
+    const { registerAuth, server: innerServer } = await server.setup(setupDeps);
+
+    const authenticate = jest.fn();
+    registerAuth(authenticate);
+
+    await server.start();
+    await supertest(innerServer.listener)
+      .get('/favicon.ico')
+      .expect(404);
+
+    expect(authenticate).toHaveBeenCalledTimes(0);
+  });
+
   test('supports enabling auth for a route explicitly', async () => {
     const { registerAuth, server: innerServer, createRouter } = await server.setup(setupDeps);
     const router = createRouter('/');
