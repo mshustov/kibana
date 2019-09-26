@@ -24,12 +24,20 @@ export default function ({ getService, getPageObjects }) {
   const browser = getService('browser');
 
   describe('server plugins', function describeIndexTests() {
-    it('extend request handler context', async () => {
-      const url = `${PageObjects.common.getHostPort()}/core_plugin_b/`;
+    it('extend request handler context with elasticsearch client', async () => {
+      const url = `${PageObjects.common.getHostPort()}/core_plugin_b/context/elasticsearch`;
       await browser.get(url);
 
       const pageSource = await browser.execute('return window.document.body.textContent;');
       expect(pageSource).to.equal('Pong via plugin A: true');
+    });
+
+    it('extend request handler context with ui settings client', async () => {
+      const url = `${PageObjects.common.getHostPort()}/core_plugin_b/context/ui_settings`;
+      await browser.get(url);
+
+      const pageSource = await browser.execute('return window.document.body.textContent;');
+      expect(pageSource).to.equal('{"beforeSet":"undefined","afterSet":"value","afterRemove":"undefined"}');
     });
   });
 }

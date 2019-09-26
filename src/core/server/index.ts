@@ -55,6 +55,7 @@ import {
 } from './http';
 import { PluginsServiceSetup, PluginsServiceStart, PluginOpaqueId } from './plugins';
 import { ContextSetup } from './context';
+import { SavedObjectsClientContract } from './types';
 
 export { bootstrap } from './bootstrap';
 export { ConfigPath, ConfigService } from './config';
@@ -180,6 +181,8 @@ export interface RequestHandlerContext {
       dataClient: ScopedClusterClient;
       adminClient: ScopedClusterClient;
     };
+    uiSettings: any;
+    savedObjects: SavedObjectsClientContract;
   };
 }
 

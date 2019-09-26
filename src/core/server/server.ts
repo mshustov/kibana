@@ -23,6 +23,7 @@ import { Type } from '@kbn/config-schema';
 import { ConfigService, Env, Config, ConfigPath } from './config';
 import { ElasticsearchService } from './elasticsearch';
 import { HttpService, HttpServiceSetup } from './http';
+import { ensureRawRequest } from './http/router';
 import { LegacyService } from './legacy';
 import { Logger, LoggerFactory } from './logging';
 import { PluginsService, config as pluginsConfig } from './plugins';
@@ -137,6 +138,8 @@ export class Server {
           adminClient: adminClient.asScoped(req),
           dataClient: dataClient.asScoped(req),
         },
+        savedObjects: ensureRawRequest(req).getSavedObjectsClient(),
+        uiSettings: ensureRawRequest(req).getUiSettingsService(),
       };
     });
   }

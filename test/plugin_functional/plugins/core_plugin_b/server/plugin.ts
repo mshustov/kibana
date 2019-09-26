@@ -29,11 +29,35 @@ declare module 'kibana/server' {
 export class CorePluginBPlugin implements Plugin {
   public setup(core: CoreSetup, deps: {}) {
     const router = core.http.createRouter();
-    router.get({ path: '/core_plugin_b/', validate: false }, async (context, req, res) => {
-      if (!context.pluginA) return res.internalError({ body: 'pluginA is disabled' });
-      const response = await context.pluginA.ping();
-      return res.ok({ body: `Pong via plugin A: ${response}` });
-    });
+    router.get(
+      { path: '/core_plugin_b/context/elasticsearch', validate: false },
+      async (context, req, res) => {
+        if (!context.pluginA) return res.internalError({ body: 'pluginA is disabled' });
+        const response = await context.pluginA.ping();
+        return res.ok({ body: `Pong via plugin A: ${response}` });
+      }
+    );
+
+    router.get(
+      { path: '/core_plugin_b/context/ui_settings', validate: false },
+      async (context, req, res) => {
+        const beforeSet = await context.core.uiSettings.get('core_plugin_b:custom');
+
+        await context.core.uiSettings.set('core_plugin_b:custom', 'value');
+        const afterSet = await context.core.uiSettings.get('core_plugin_b:custom');
+
+        await context.core.uiSettings.remove('core_plugin_b:custom');
+        const afterRemove = await context.core.uiSettings.get('core_plugin_b:custom');
+
+        return res.ok({
+          body: {
+            beforeSet: String(beforeSet),
+            afterSet: String(afterSet),
+            afterRemove: String(afterRemove),
+          },
+        });
+      }
+    );
   }
 
   public start() {}
