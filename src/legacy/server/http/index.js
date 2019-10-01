@@ -28,7 +28,6 @@ import { setupBasePathProvider } from './setup_base_path_provider';
 import { setupXsrf } from './xsrf';
 
 export default async function (kbnServer, server, config) {
-  kbnServer.server = kbnServer.newPlatform.setup.core.http.server;
   server = kbnServer.server;
 
   setupBasePathProvider(kbnServer);

@@ -20,7 +20,7 @@
 import { ResponseObject, Server } from 'hapi';
 import { UnwrapPromise } from '@kbn/utility-types';
 
-import { SavedObjectsClientProviderOptions } from 'src/core/server';
+import { SavedObjectsClientProviderOptions, CoreSetup } from 'src/core/server';
 import {
   ConfigService,
   ElasticsearchServiceSetup,
@@ -78,6 +78,7 @@ declare module 'hapi' {
       factoryFn: (request: Request) => Record<string, any>
     ) => void;
     uiSettingsServiceFactory: (options: any) => any;
+    newPlatform: KbnServer['newPlatform'];
   }
 
   interface Request {
@@ -100,8 +101,14 @@ export default class KbnServer {
     coreContext: {
       logger: LoggerFactory;
     };
-    setup: LegacyServiceSetupDeps;
-    start: LegacyServiceStartDeps;
+    setup: {
+      core: CoreSetup;
+      plugins: Record<string, object>;
+    };
+    start: {
+      core: CoreSetup;
+      plugins: Record<string, object>;
+    };
     stop: null;
     params: {
       handledConfigPaths: UnwrapPromise<ReturnType<ConfigService['getUsedPaths']>>;
