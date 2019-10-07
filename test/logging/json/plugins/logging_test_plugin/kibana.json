@@ -1,0 +1,7 @@
+{
+  "id": "logging_test_plugin",
+  "version": "0.0.1",
+  "kibanaVersion": "kibana",
+  "server": true,
+  "ui": false
+}
