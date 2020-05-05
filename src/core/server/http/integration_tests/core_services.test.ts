@@ -390,7 +390,7 @@ describe('http service', () => {
       expect(dataClientHeaders).toEqual(authHeaders);
     });
 
-    it('passes request authorization header to Elasticsearch if registerAuth was not set', async () => {
+    it.skip('passes request authorization header to Elasticsearch if registerAuth was not set', async () => {
       const authorizationHeader = 'Basic: username:password';
       const { http } = await root.setup();
       const { createRouter } = http;
