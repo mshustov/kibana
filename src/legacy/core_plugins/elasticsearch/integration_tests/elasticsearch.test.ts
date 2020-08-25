@@ -24,7 +24,7 @@ import {
   TestUtils,
   createRootWithCorePlugins,
   getKbnServer,
-} from '../../../../test_utils/kbn_server';
+} from '../../../../core/test_helpers/kbn_server';
 
 import { BehaviorSubject } from 'rxjs';
 // eslint-disable-next-line @kbn/eslint/no-restricted-paths
