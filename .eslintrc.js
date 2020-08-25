@@ -351,7 +351,7 @@ module.exports = {
                 from: [
                   '(src|x-pack)/plugins/**/(public|server)/**/*',
                   '!(src|x-pack)/plugins/**/(public|server)/mocks/index.{js,mjs,ts}',
-                  '!(src|x-pack)/plugins/**/(public|server)/(index|mocks).{js,mjs,ts,tsx}',
+                  '!(src|x-pack)/plugins/**/(public|server)/(index|mocks|test_utils).{js,mjs,ts,tsx}',
                 ],
                 allowSameFolder: true,
                 errorMessage: 'Plugins may only import from top-level public and server modules.',
