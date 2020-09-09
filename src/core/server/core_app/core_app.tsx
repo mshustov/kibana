@@ -18,82 +18,14 @@
  */
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { EuiButton } from '@elastic/eui/lib/components/button';
-import { EuiPage, EuiPageBody, EuiPageContent } from '@elastic/eui/lib/components/page';
-import { EuiEmptyPrompt } from '@elastic/eui/lib/components/empty_prompt';
-
 import * as UiSharedDeps from '@kbn/ui-shared-deps';
-import { FormattedMessage, I18nProvider } from '@kbn/i18n/react';
 
 import Path from 'path';
 import { fromRoot } from '../../../core/server/utils';
 import { InternalCoreSetup } from '../internal_types';
 import { CoreContext } from '../core_context';
 import { Logger } from '../logging';
-
-function ResetSessionPage({
-  logoutUrl,
-  styleSheetPaths,
-}: {
-  logoutUrl: string;
-  styleSheetPaths: string[];
-}) {
-  return (
-    <html lang="en">
-      <head>
-        <React.Fragment>
-          {styleSheetPaths.map((path) => (
-            <link href={path} rel="stylesheet" />
-          ))}
-        </React.Fragment>
-      </head>
-      <body>
-        <I18nProvider>
-          <EuiPage style={{ minHeight: '100vh' }}>
-            <EuiPageBody>
-              <EuiPageContent verticalPosition="center" horizontalPosition="center">
-                <EuiEmptyPrompt
-                  /* TODO fix icon rendering */
-                  iconType="alert"
-                  iconColor="danger"
-                  title={
-                    <h2>
-                      <FormattedMessage
-                        id="xpack.security.resetSession.title"
-                        defaultMessage="You do not have permission to access the requested page - default message"
-                      />
-                    </h2>
-                  }
-                  body={
-                    <p>
-                      <FormattedMessage
-                        id="xpack.security.resetSession.description"
-                        defaultMessage="Either go back to the previous page or log in as a different user."
-                      />
-                    </p>
-                  }
-                  actions={[
-                    <EuiButton
-                      color="primary"
-                      fill
-                      href={logoutUrl}
-                      data-test-subj="ResetSessionButton"
-                    >
-                      <FormattedMessage
-                        id="xpack.security.resetSession.LogOutButtonLabel"
-                        defaultMessage="Log in as different user"
-                      />
-                    </EuiButton>,
-                  ]}
-                />
-              </EuiPageContent>
-            </EuiPageBody>
-          </EuiPage>
-        </I18nProvider>
-      </body>
-    </html>
-  );
-}
+import { ResetSessionPage } from './reset_session_page';
 
 /** @internal */
 export class CoreApp {
@@ -127,7 +59,6 @@ export class CoreApp {
       const buildHash = this.context.env.packageInfo.buildNum;
       const regularBundlePath = `${basePath}/${buildHash}/bundles`;
 
-      // TODO add fonts, csp rules
       const styleSheetPaths = [
         `${regularBundlePath}/kbn-ui-shared-deps/${UiSharedDeps.baseCssDistFilename}`,
         `${regularBundlePath}/kbn-ui-shared-deps/${UiSharedDeps.lightCssDistFilename}`,
@@ -135,11 +66,22 @@ export class CoreApp {
         `${basePath}/ui/legacy_light_theme.css`,
       ];
 
+      const uiPublicUrl = `${basePath}/ui`;
       const logoutUrl = httpSetup.basePath.prepend('/api/security/logout');
       const body = renderToStaticMarkup(
-        <ResetSessionPage logoutUrl={logoutUrl} styleSheetPaths={styleSheetPaths} />
+        <ResetSessionPage
+          logoutUrl={logoutUrl}
+          styleSheetPaths={styleSheetPaths}
+          uiPublicUrl={uiPublicUrl}
+        />
       );
-      return res.ok({ body });
+
+      return res.ok({
+        body,
+        headers: {
+          'content-security-policy': httpSetup.csp.header,
+        },
+      });
     });
 
     const anonymousStatusPage = coreSetup.status.isStatusPageAnonymous();
