@@ -35,7 +35,7 @@ import {
   ErrorHttpResponseOptions,
 } from './response';
 import { RouteConfig, RouteConfigOptions, RouteMethod, validBodyOutput } from './route';
-import { HapiResponseAdapter } from './response_adapter';
+import { HapiResponseAdapter, getErrorMessage } from './response_adapter';
 import { RequestHandlerContext } from '../../../server';
 import { wrapErrors } from './error_wrapper';
 import { RouteValidator } from './validator';
@@ -270,6 +270,12 @@ export class Router implements IRouter {
 
     try {
       const kibanaResponse = await handler(kibanaRequest, kibanaResponseFactory);
+
+      const isInternalError = kibanaResponse.status === 500;
+      if (isInternalError) {
+        this.log.error(getErrorMessage(kibanaResponse.payload));
+      }
+
       return hapiResponseAdapter.handle(kibanaResponse);
     } catch (e) {
       this.log.error(e);

@@ -1371,6 +1371,35 @@ describe('Response factory', () => {
       expect(result.body.message).toBe('Conflict');
     });
 
+    it('"internalError" logs details of created 500 Server error response', async () => {
+      const { server: innerServer, createRouter } = await server.setup(setupDeps);
+      const router = createRouter('/');
+
+      router.get({ path: '/', validate: false }, (context, req, res) => {
+        const error = new Error('reason');
+
+        return res.internalError({ body: error });
+      });
+
+      await server.start();
+
+      const result = await supertest(innerServer.listener).get('/').expect(500);
+
+      expect(result.body).toEqual({
+        error: 'Internal Server Error',
+        message: 'reason',
+        statusCode: 500,
+      });
+
+      expect(loggingSystemMock.collect(logger).error).toMatchInlineSnapshot(`
+        Array [
+          Array [
+            "reason",
+          ],
+        ]
+      `);
+    });
+
     it('Custom error response', async () => {
       const { server: innerServer, createRouter } = await server.setup(setupDeps);
 
@@ -1416,6 +1445,38 @@ describe('Response factory', () => {
         message: 'some message',
         statusCode: 500,
       });
+    });
+
+    it('"customError" logs details of created 500 Server error response', async () => {
+      const { server: innerServer, createRouter } = await server.setup(setupDeps);
+      const router = createRouter('/');
+
+      router.get({ path: '/', validate: false }, (context, req, res) => {
+        const error = new Error('reason');
+
+        return res.customError({
+          body: error,
+          statusCode: 500,
+        });
+      });
+
+      await server.start();
+
+      const result = await supertest(innerServer.listener).get('/').expect(500);
+
+      expect(result.body).toEqual({
+        error: 'Internal Server Error',
+        message: 'reason',
+        statusCode: 500,
+      });
+
+      expect(loggingSystemMock.collect(logger).error).toMatchInlineSnapshot(`
+        Array [
+          Array [
+            "reason",
+          ],
+        ]
+      `);
     });
 
     it('Custom error response for Boom server error', async () => {
@@ -1631,7 +1692,7 @@ describe('Response factory', () => {
       expect(result.body.message).toBe('Unauthorized');
     });
 
-    it("Doesn't log details of created 500 Server error response", async () => {
+    it('logs details of created 500 Server error response', async () => {
       const { server: innerServer, createRouter } = await server.setup(setupDeps);
       const router = createRouter('/');
 
@@ -1647,7 +1708,13 @@ describe('Response factory', () => {
       const result = await supertest(innerServer.listener).get('/').expect(500);
 
       expect(result.body.message).toBe('reason');
-      expect(loggingSystemMock.collect(logger).error).toHaveLength(0);
+      expect(loggingSystemMock.collect(logger).error).toMatchInlineSnapshot(`
+        Array [
+          Array [
+            "reason",
+          ],
+        ]
+      `);
     });
 
     it('throws an error if not valid error is provided', async () => {

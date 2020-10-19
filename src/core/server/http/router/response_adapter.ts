@@ -147,7 +147,7 @@ export class HapiResponseAdapter {
   }
 }
 
-function getErrorMessage(payload?: ResponseError): string {
+export function getErrorMessage(payload?: ResponseError): string {
   if (!payload) {
     throw new Error('expected error message to be provided');
   }
