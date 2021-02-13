@@ -463,7 +463,7 @@ describe('ShareToSpaceFlyout', () => {
       const { wrapper } = await setup({ mockSpaces, namespaces });
 
       const selectable = wrapper.find(SelectableSpacesControl).find(EuiSelectable);
-      const selectOptions = selectable.prop('options');
+      const selectOptions = selectable.prop('options') as any[];
       expect(selectOptions[0]['data-space-id']).toEqual('my-active-space');
       expectActiveSpace(selectOptions[0]);
       expect(selectOptions[1]['data-space-id']).toEqual('space-1');
@@ -477,7 +477,7 @@ describe('ShareToSpaceFlyout', () => {
       const { wrapper } = await setup({ mockSpaces, namespaces });
 
       const selectable = wrapper.find(SelectableSpacesControl).find(EuiSelectable);
-      const selectOptions = selectable.prop('options');
+      const selectOptions = selectable.prop('options') as any[];
       expect(selectOptions[0]['data-space-id']).toEqual('my-active-space');
       expectActiveSpace(selectOptions[0]);
       expect(selectOptions[1]['data-space-id']).toEqual('space-1');
