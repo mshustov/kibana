@@ -10,7 +10,7 @@ import { mockTelemetryActions, mountWithIntl } from '../../../__mocks__';
 
 import React from 'react';
 
-import { EuiBasicTable, EuiPagination, EuiButtonEmpty } from '@elastic/eui';
+import { EuiBasicTable, EuiPagination, EuiButtonEmpty, CriteriaWithPagination } from '@elastic/eui';
 
 import { EuiLinkTo } from '../../../shared/react_router_helpers';
 
@@ -46,7 +46,7 @@ describe('EnginesTable', () => {
 
   it('renders', () => {
     expect(table).toHaveLength(1);
-    expect(table.prop('pagination').totalItemCount).toEqual(50);
+    expect(table.prop('pagination')!.totalItemCount).toEqual(50);
 
     const tableContent = table.text();
     expect(tableContent).toContain('test-engine');
@@ -73,7 +73,7 @@ describe('EnginesTable', () => {
   });
 
   it('triggers onPaginate', () => {
-    table.prop('onChange')({ page: { index: 4 } });
+    table.prop('onChange')!({ page: { index: 4 } } as CriteriaWithPagination<any>);
 
     expect(onPaginate).toHaveBeenCalledWith(5);
   });
@@ -87,7 +87,7 @@ describe('EnginesTable', () => {
     );
     const emptyTable = emptyWrapper.find(EuiBasicTable);
 
-    expect(emptyTable.prop('pagination').pageIndex).toEqual(0);
+    expect(emptyTable.prop('pagination')!.pageIndex).toEqual(0);
   });
 
   describe('language field', () => {
