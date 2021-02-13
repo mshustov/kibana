@@ -25,7 +25,7 @@ import { InternalElasticsearchServiceSetup, InternalElasticsearchServiceStart } 
 import { pollEsNodesVersion } from './version_check/ensure_es_version';
 import { calculateStatus$ } from './status';
 
-interface SetupDeps {
+export interface SetupDeps {
   http: InternalHttpServiceSetup;
 }
 

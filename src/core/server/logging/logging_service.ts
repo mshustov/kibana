@@ -46,7 +46,7 @@ export interface InternalLoggingServiceSetup {
   configure(contextParts: string[], config$: Observable<LoggerContextConfigInput>): void;
 }
 
-interface SetupDeps {
+export interface SetupDeps {
   loggingSystem: ILoggingSystem;
 }
 

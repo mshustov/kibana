@@ -41,7 +41,7 @@ interface ConstructorParams {
   browserSupportsCsp: boolean;
 }
 
-interface StartDeps {
+export interface StartDeps {
   application: InternalApplicationStart;
   docLinks: DocLinksStart;
   http: HttpStart;

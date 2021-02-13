@@ -39,7 +39,7 @@ import {
   ExternalUrlConfig,
 } from '../external_url';
 
-interface SetupDeps {
+export interface SetupDeps {
   context: ContextSetup;
 }
 
