@@ -27,7 +27,7 @@ async function removeLogFile() {
 }
 
 // FAILING: https://github.com/elastic/kibana/pull/96788
-describe.skip('migration from 7.7.2-xpack with 100k objects', () => {
+describe('migration from 7.7.2-xpack with 100k objects', () => {
   let esServer: kbnTestServer.TestElasticsearchUtils;
   let root: Root;
   let coreStart: InternalCoreStart;
