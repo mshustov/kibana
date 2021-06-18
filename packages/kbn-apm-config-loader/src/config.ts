@@ -29,6 +29,7 @@ const getDefaultConfig = (isDistributable: boolean): ApmAgentConfig => {
     // the data is transmitted to, but due to how it's being hosted, it's easier,
     // for now, to simply leave it in.
     secretToken: 'ZQHYvrmXEx04ozge8F',
+    logLevel: 'debug',
 
     logUncaughtExceptions: true,
     globalLabels: {},
