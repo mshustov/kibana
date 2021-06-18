@@ -8,6 +8,8 @@
 
 import Path from 'path';
 import { stringify } from 'querystring';
+import apm from 'elastic-apm-node';
+
 import { Env } from '@kbn/config';
 import { schema } from '@kbn/config-schema';
 import { fromRoot } from '@kbn/utils';
@@ -86,8 +88,14 @@ export class CoreApp {
       }
     );
 
-    router.get({ path: '/core', validate: false }, async (context, req, res) =>
-      res.ok({ body: { version: '0.0.1' } })
+    router.get(
+      { path: '/core', validate: false, options: { authRequired: false } },
+      async (context, req, res) => {
+        const transaction = apm.startTransaction('test', 'core');
+        await context.core.elasticsearch.client.asInternalUser.cat.indices();
+        transaction?.end();
+        return res.ok({ body: { version: '0.0.1' } });
+      }
     );
 
     registerBundleRoutes({
