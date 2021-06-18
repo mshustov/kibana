@@ -8,6 +8,7 @@
 
 import { Buffer } from 'buffer';
 import { stringify } from 'querystring';
+import apm from 'elastic-apm-node';
 import { ApiError, Client, RequestEvent, errors } from '@elastic/elasticsearch';
 import type { RequestBody } from '@elastic/elasticsearch/lib/Transport';
 import { Logger } from '../../logging';
@@ -73,6 +74,10 @@ const addLogging = (client: Client, logger: Logger) => {
       if (error) {
         logger.debug(getErrorMessage(error, event));
       } else {
+        if (event.meta.request.params.method.toLowerCase() === 'get') {
+          console.log('>> trace:', apm.currentTraceIds);
+          console.log('>> outgoing request headers:', event.meta.request.params);
+        }
         logger.debug(getResponseMessage(event));
       }
     }
