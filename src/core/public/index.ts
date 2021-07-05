@@ -190,6 +190,8 @@ export type { MountPoint, UnmountCallback, PublicUiSettingsParams } from './type
 
 export { URL_MAX_LENGTH } from './core_app';
 
+export type { KibanaExecutionContext } from './execution_context';
+
 /**
  * Core services exposed to the `Plugin` setup lifecycle
  *

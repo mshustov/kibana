@@ -543,6 +543,7 @@ export type {
   CapabilitiesSetup,
   CapabilitiesStart,
   ContextSetup,
+  ExecutionContextSetup,
   HttpResources,
   PluginsServiceSetup,
   PluginsServiceStart,
