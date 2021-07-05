@@ -5,7 +5,7 @@
  * in compliance with, at your election, the Elastic License 2.0 or the Server
  * Side Public License, v 1.
  */
-
+import type { KibanaExecutionContext } from 'src/core/public';
 import { Adapters } from '../../../inspector/public';
 import {
   IInterpreterRenderHandlers,
@@ -48,6 +48,7 @@ export interface IExpressionLoaderParams {
   renderMode?: RenderMode;
   syncColors?: boolean;
   hasCompatibleActions?: ExpressionRenderHandlerParams['hasCompatibleActions'];
+  executionContext?: KibanaExecutionContext;
 }
 
 export interface ExpressionRenderError extends Error {
