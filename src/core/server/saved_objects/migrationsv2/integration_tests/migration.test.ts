@@ -66,6 +66,7 @@ describe('migration v2', () => {
         es: {
           license: 'basic',
           dataArchive,
+          esArgs: ['http.max_content_length=1Mb'],
         },
       },
     });
