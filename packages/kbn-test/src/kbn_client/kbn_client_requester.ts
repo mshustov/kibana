@@ -11,6 +11,7 @@ import Https from 'https';
 import Qs from 'querystring';
 
 import Axios, { AxiosResponse, ResponseType } from 'axios';
+import { withSpan } from '@kbn/apm-utils';
 import { ToolingLog, isAxiosRequestError, isAxiosResponseError } from '@kbn/dev-utils';
 
 const isConcliftOnGetError = (error: any) => {
@@ -112,61 +113,69 @@ export class KbnClientRequester {
   }
 
   async request<T>(options: ReqOptions): Promise<AxiosResponse<T>> {
-    const url = this.resolveUrl(options.path);
-    const description = options.description || `${options.method} ${url}`;
-    let attempt = 0;
-    const maxAttempts = options.retries ?? DEFAULT_MAX_ATTEMPTS;
+    return withSpan(
+      {
+        name: 'kbn-test',
+        type: 'http-request',
+      },
+      async () => {
+        const url = this.resolveUrl(options.path);
+        const description = options.description || `${options.method} ${url}`;
+        let attempt = 0;
+        const maxAttempts = options.retries ?? DEFAULT_MAX_ATTEMPTS;
 
-    while (true) {
-      attempt += 1;
+        while (true) {
+          attempt += 1;
 
-      try {
-        const response = await Axios.request({
-          method: options.method,
-          url,
-          data: options.body,
-          params: options.query,
-          headers: {
-            ...options.headers,
-            'kbn-xsrf': 'kbn-client',
-          },
-          httpsAgent: this.httpsAgent,
-          responseType: options.responseType,
-          // work around https://github.com/axios/axios/issues/2791
-          transformResponse: options.responseType === 'text' ? [(x) => x] : undefined,
-          maxContentLength: 30000000,
-          maxBodyLength: 30000000,
-          paramsSerializer: (params) => Qs.stringify(params),
-        });
+          try {
+            const response = await Axios.request({
+              method: options.method,
+              url,
+              data: options.body,
+              params: options.query,
+              headers: {
+                ...options.headers,
+                'kbn-xsrf': 'kbn-client',
+              },
+              httpsAgent: this.httpsAgent,
+              responseType: options.responseType,
+              // work around https://github.com/axios/axios/issues/2791
+              transformResponse: options.responseType === 'text' ? [(x) => x] : undefined,
+              maxContentLength: 30000000,
+              maxBodyLength: 30000000,
+              paramsSerializer: (params) => Qs.stringify(params),
+            });
 
-        return response;
-      } catch (error) {
-        const conflictOnGet = isConcliftOnGetError(error);
-        const requestedRetries = options.retries !== undefined;
-        const failedToGetResponse = isAxiosRequestError(error);
+            return response;
+          } catch (error) {
+            const conflictOnGet = isConcliftOnGetError(error);
+            const requestedRetries = options.retries !== undefined;
+            const failedToGetResponse = isAxiosRequestError(error);
 
-        if (isIgnorableError(error, options.ignoreErrors)) {
-          return error.response;
+            if (isIgnorableError(error, options.ignoreErrors)) {
+              return error.response;
+            }
+
+            let errorMessage;
+            if (conflictOnGet) {
+              errorMessage = `Conflict on GET (path=${options.path}, attempt=${attempt}/${maxAttempts})`;
+              this.log.error(errorMessage);
+            } else if (requestedRetries || failedToGetResponse) {
+              errorMessage = `[${description}] request failed (attempt=${attempt}/${maxAttempts}): ${error.message}`;
+              this.log.error(errorMessage);
+            } else {
+              throw error;
+            }
+
+            if (attempt < maxAttempts) {
+              await delay(1000 * attempt);
+              continue;
+            }
+
+            throw new Error(`${errorMessage} -- and ran out of retries`);
+          }
         }
-
-        let errorMessage;
-        if (conflictOnGet) {
-          errorMessage = `Conflict on GET (path=${options.path}, attempt=${attempt}/${maxAttempts})`;
-          this.log.error(errorMessage);
-        } else if (requestedRetries || failedToGetResponse) {
-          errorMessage = `[${description}] request failed (attempt=${attempt}/${maxAttempts}): ${error.message}`;
-          this.log.error(errorMessage);
-        } else {
-          throw error;
-        }
-
-        if (attempt < maxAttempts) {
-          await delay(1000 * attempt);
-          continue;
-        }
-
-        throw new Error(`${errorMessage} -- and ran out of retries`);
       }
-    }
+    );
   }
 }
